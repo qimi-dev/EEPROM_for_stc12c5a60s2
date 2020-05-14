@@ -1,0 +1,120 @@
+C51 COMPILER V8.06   MAIN                                                                  05/14/2020 16:12:06 PAGE 1   
+
+
+C51 COMPILER V8.06, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\Objects\main.obj
+COMPILER INVOKED BY: E:\Keil_v5\C51\BIN\C51.EXE main.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\main
+                    -.lst) OBJECT(.\Objects\main.obj)
+
+line level    source
+
+   1          #include "STC12C5A60S2.h"
+   2          #include <intrins.h>
+   3          
+   4          
+   5          
+   6          /* 定义 ISP/IAP/EEPROM 命令 */
+   7          #define CMD_IDLE     0    //Stand-By
+   8          #define CMD_READ     1    //读字节
+   9          #define CMD_PROGRAM  2    //写字节
+  10          #define CMD_ERASE    3    //扇区擦除
+  11          
+  12          /* 定义 ISP/IAP/EEPROM 中操作常量IAP_CONTR */
+  13          #define ENABLE_IAP   0x82
+  14          
+  15          /* 定义开始地址 */
+  16          #define IAP_ADDRESS 0x0000   
+  17          
+  18          
+  19          /* --------------------------------------------------
+  20                  关闭 ISP/IAP/EEPROM 方法，让单片机处于安全状态
+  21          -------------------------------------------------- */
+  22          void IapIdle(){
+  23   1              IAP_CONTR = 0;         // 关闭IAP方法
+  24   1              IAP_CMD = 0;               // 清楚命令
+  25   1              IAP_TRIG = 0;              // 清楚触发寄存器
+  26   1              IAP_ADDRH = 0x80;      // 数据地址指向非EEPROM的区域
+  27   1              IAP_ADDRL = 0;         // 清楚IAP地址，防止滥用
+  28   1      }
+  29          
+  30          /* ---------------------
+  31                  读对应地址的数据
+  32          --------------------- */
+  33          unsigned char IapReadByte(unsigned int addr){
+  34   1              unsigned int dat;
+  35   1              
+  36   1              IAP_CONTR = ENABLE_IAP;       // 打开IAP方法
+  37   1              IAP_CMD = CMD_READ;           // 设置读命令
+  38   1              IAP_ADDRL = addr;             // 设置低八位地址
+  39   1              IAP_ADDRH = addr >> 8;        // 设置高八位地址
+  40   1              IAP_TRIG = 0x5A;              // 设置触发命令
+  41   1              IAP_TRIG = 0xa5;              // 设置触发命令
+  42   1              _nop_();
+  43   1              
+  44   1              dat = IAP_DATA;               // 读取数据
+  45   1              IapIdle();                    // 关闭方法
+  46   1              
+  47   1              return dat;
+  48   1      }
+  49          
+  50          /* ---------------------
+  51                  向对应地址写数据
+  52          --------------------- */
+  53          void IapProgramByte(unsigned int addr, unsigned char dat){
+  54   1              IAP_CONTR = ENABLE_IAP;       // 打开IAP方法
+C51 COMPILER V8.06   MAIN                                                                  05/14/2020 16:12:06 PAGE 2   
+
+  55   1              IAP_CMD = CMD_PROGRAM;        // 设置写命令
+  56   1              IAP_ADDRL = addr;             // 设置低八位地址
+  57   1              IAP_ADDRH = addr >> 8;        // 设置高八位地址
+  58   1              IAP_DATA = dat;               // 写数据
+  59   1              IAP_TRIG = 0x5A;              // 设置触发命令
+  60   1              IAP_TRIG = 0xa5;              // 设置触发命令
+  61   1              _nop_();
+  62   1              
+  63   1              IapIdle();                    // 关闭方法
+  64   1      }
+  65          
+  66          /* ---------------------
+  67                  擦除对应地址扇区
+  68          --------------------- */
+  69          void IapEraseSector(unsigned int addr){
+  70   1              IAP_CONTR = ENABLE_IAP;       // 打开IAP方法
+  71   1              IAP_CMD = CMD_ERASE;          // 设置写擦除令
+  72   1              IAP_ADDRL = addr;             // 设置低八位地址
+  73   1              IAP_ADDRH = addr >> 8;        // 设置高八位地址
+  74   1              IAP_TRIG = 0x5A;              // 设置触发命令
+  75   1              IAP_TRIG = 0xa5;              // 设置触发命令
+  76   1              _nop_();
+  77   1              
+  78   1              IapIdle();                    // 关闭方法
+  79   1      }
+  80          
+  81          
+  82          void main(){
+  83   1              /* 擦除所有扇区的 */
+  84   1              IapEraseSector(0x0000);
+  85   1              IapEraseSector(0x0200);
+  86   1              /* 往0x0000写进一个字节 */
+  87   1              IapProgramByte(0x0000, 0x01);
+  88   1              /* 读取0x0000的数据 */
+  89   1              IapReadByte(0x0000);
+  90   1      }
+  91          
+  92          
+  93          
+  94          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    101    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
